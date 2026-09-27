@@ -15,9 +15,15 @@ Balanza is an in-progress project designed to explore those backend engineering 
 - FastAPI application
 - `GET /health` health-check endpoint
 - Automatically generated interactive API documentation at `/docs`
+- Versioned API routing under `/api/v1`
+- `POST /api/v1/wallets` creates a temporary NGN wallet
+- `GET /api/v1/wallets/{wallet_id}` retrieves a temporary wallet by UUID
+- Pydantic request validation for wallet name and supported currency
+- Consistent `404 Not Found` responses for missing wallets
 
 ## Planned capabilities
 
+- Replace temporary in-memory wallet storage with PostgreSQL persistence
 - Project configuration and environment-variable management
 - PostgreSQL database integration and schema migrations
 - User registration and login

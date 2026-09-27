@@ -12,15 +12,18 @@ Balanza is an in-progress project designed to explore those backend engineering 
 
 ## Current capabilities
 
-- User registration and login
-- Protected API routes
-- Wallet creation and balance lookup
-- PostgreSQL data persistence
-- Input validation and consistent API errors
-- Health-check endpoint
+- FastAPI application
+- `GET /health` health-check endpoint
+- Automatically generated interactive API documentation at `/docs`
 
 ## Planned capabilities
 
+- Project configuration and environment-variable management
+- PostgreSQL database integration and schema migrations
+- User registration and login
+- Protected API routes
+- Wallet creation and balance lookup
+- Input validation and consistent API errors
 - Transaction-safe wallet transfers
 - Append-only ledger entries
 - Idempotency keys for money-moving requests

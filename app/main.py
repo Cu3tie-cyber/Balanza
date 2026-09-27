@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
+
 app = FastAPI(
-    title="Balanza",
+    title=settings.app_name,
     description="A reliability-focused fintech backend API.",
     version="0.1.0",
 )
@@ -9,4 +11,7 @@ app = FastAPI(
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+    }

@@ -1,208 +1,274 @@
-# Balanza 
+# Balanza
 
-A reliability-focused fintech backend API built with Python, FastAPI, and PostgreSQL. It explores safe internal wallet transfers under retries, concurrent requests, and authorization checks.
+Balanza is a reliability-focused fintech wallet backend built with Python, FastAPI, PostgreSQL, SQLAlchemy, and Alembic.
 
-> Status: Actively under development.
+It implements a simple NGN wallet ledger with database constraints, transactional credit and debit operations, and automated API tests. Balanza is a learning project: it does not process real payments, store card data, or hold real customer funds.
 
-## Why this project exists
+> Status: MVP complete. Authentication, idempotency, and production deployment hardening are planned next.
 
-Financial APIs must remain correct even when clients retry requests, networks fail, two requests happen at once, or a user tries to access data they do not own.
+## Features
 
-Balanza is an in-progress project designed to explore those backend engineering problems. It does not process real payments, store card data, or hold real customer funds.
+- FastAPI application with interactive Swagger documentation.
+- Versioned API routes under `/api/v1`.
+- PostgreSQL persistence through SQLAlchemy.
+- Alembic database migrations.
+- Create NGN wallets with a zero starting balance.
+- Retrieve wallet details by UUID.
+- Credit and debit wallet balances using integer kobo values.
+- Append-only transaction ledger entries.
+- Debit protection: insufficient-balance debits return `400 Bad Request`.
+- Database constraints:
+  - Wallet balances cannot be negative.
+  - Transaction amounts must be greater than zero.
+  - Transaction types are restricted to `credit` and `debit`.
+  - Every transaction must reference an existing wallet.
+- Row locking during transaction processing to help prevent concurrent debits from overdrawing a wallet.
+- Automated endpoint tests using an isolated PostgreSQL test database.
 
-## Current capabilities
+## Tech Stack
 
-- FastAPI application
-- `GET /health` health-check endpoint
-- Automatically generated interactive API documentation at `/docs`
-- Versioned API routing under `/api/v1`
-- `POST /api/v1/wallets` creates a persistent NGN wallet in PostgreSQL
-- `GET /api/v1/wallets/{wallet_id}` retrieves a persistent wallet by UUID
-- Alembic database migrations manage the PostgreSQL schema
-- Automated endpoint tests run against an isolated PostgreSQL test database
-- Pydantic request validation for wallet name and supported currency
-- Consistent `404 Not Found` responses for missing wallets
-
-## Planned capabilities
-
-- Project configuration and environment-variable management
-- PostgreSQL database integration and schema migrations
-- User registration and login
-- Protected API routes
-- Wallet creation and balance lookup
-- Input validation and consistent API errors
-- Transaction-safe wallet transfers
-- Append-only ledger entries
-- Idempotency keys for money-moving requests
-- Ownership and authorization tests
-- Concurrent-transfer tests
-- Simulated payment-provider webhooks
-- Audit logs and structured application logs
-
-## Tech stack
-
-- Python
+- Python 3.12
 - FastAPI
-- PostgreSQL
+- Pydantic v2
+- PostgreSQL 16
 - SQLAlchemy
 - Alembic
+- Psycopg
 - Docker Compose
 - Pytest
+- HTTPX
 
-## Project structure
+## Project Structure
 
 ```text
-ledgerlite-api/
-├── app/
-│   ├── main.py
-│   ├── auth/
-│   ├── wallets/
-│   ├── transfers/
-│   └── common/
-├── tests/
-├── docs/
-├── docker-compose.yml
-├── requirements.txt
-├── .env.example
-└── README.md
+Balanza/
+|-- alembic/
+|   |-- versions/
+|   `-- env.py
+|-- app/
+|   |-- api/
+|   |   |-- routes/
+|   |   |   `-- wallets.py
+|   |   `-- router.py
+|   |-- core/
+|   |   `-- config.py
+|   |-- db/
+|   |   |-- base.py
+|   |   `-- session.py
+|   |-- models/
+|   |   |-- transaction.py
+|   |   `-- wallet.py
+|   |-- schemas/
+|   |   |-- transaction.py
+|   |   `-- wallet.py
+|   `-- main.py
+|-- tests/
+|   |-- conftest.py
+|   `-- test_wallets.py
+|-- compose.yaml
+|-- requirements.txt
+|-- .env.example
+`-- README.md
 ```
 
-## Getting started
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.12 or later
-- Docker and Docker Compose
+- Docker Desktop with Docker Compose
 - Git
 
-### Run locally
+## Local Setup
 
-```bash
-git clone [https://github.com/YOUR-GITHUB-USERNAME/ledgerlite-api.git](https://github.com/YOUR-GITHUB-USERNAME/ledgerlite-api.git)
-cd ledgerlite-api
+### 1. Create and activate a virtual environment
 
-cp .env.example .env
+Windows PowerShell:
 
-docker compose up --build
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-The API will be available at:
+### 2. Install dependencies
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+### 3. Create the environment file
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Use the local-development values in `.env.example` unless you need to change your PostgreSQL user, password, or port.
+
+### 4. Start PostgreSQL
+
+```powershell
+docker compose up -d db
+```
+
+Confirm that the database is healthy:
+
+```powershell
+docker compose ps
+```
+
+### 5. Apply database migrations
+
+```powershell
+alembic upgrade head
+```
+
+### 6. Start the API
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+The API runs at:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8000
 ```
 
-Interactive API documentation will be available at:
+Swagger UI is available at:
 
 ```text
-http://localhost:8000/docs
+http://127.0.0.1:8000/docs
 ```
 
-## API examples
+## API Endpoints
 
-### Check service health
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Returns application health information |
+| `POST` | `/api/v1/wallets` | Creates a wallet with a zero balance |
+| `GET` | `/api/v1/wallets/{wallet_id}` | Retrieves one wallet |
+| `POST` | `/api/v1/wallets/{wallet_id}/transactions` | Credits or debits a wallet |
+| `GET` | `/api/v1/wallets/{wallet_id}/transactions` | Lists a wallet transaction ledger |
+
+## API Examples
+
+### Create a wallet
 
 ```http
-GET /health
-```
-
-Example response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-### Register a user
-
-```http
-POST /auth/register
+POST /api/v1/wallets
 Content-Type: application/json
 ```
 
 ```json
 {
-  "email": "bolu@example.com",
-  "password": "a-strong-password"
+  "name": "Primary Wallet",
+  "currency": "NGN"
 }
 ```
 
-## Testing
+A successful response returns `201 Created` and starts with:
 
-Run the test suite with:
-
-```bash
-pytest
+```json
+{
+  "balance_kobo": 0
+}
 ```
 
-The project will include tests for successful behaviour as well as failure cases such as invalid input, unauthorized access, duplicate requests, and insufficient balance.
-The current test suite verifies wallet creation, successful retrieval, missing-wallet handling, and request validation against an isolated PostgreSQL test database.
+### Credit a wallet
 
-## Architecture decisions
+```http
+POST /api/v1/wallets/{wallet_id}/transactions
+Content-Type: application/json
+```
 
-### Why FastAPI?
+```json
+{
+  "transaction_type": "credit",
+  "amount_kobo": 50000
+}
+```
 
-FastAPI was chosen because Python is my strongest language and it supports explicit request validation, type hints, generated API documentation, and fast iteration.
+`50000` kobo represents NGN 500.00.
 
-### Why PostgreSQL?
+### Debit a wallet
 
-PostgreSQL was chosen because this project requires relational data modelling, database constraints, and transactions for operations that must remain consistent.
+```http
+POST /api/v1/wallets/{wallet_id}/transactions
+Content-Type: application/json
+```
 
-### Why a modular monolith?
+```json
+{
+  "transaction_type": "debit",
+  "amount_kobo": 20000
+}
+```
 
-This project is intentionally a modular monolith rather than microservices. A single application and database make transaction boundaries easier to reason about while the code remains organized by domain.
+A debit larger than the available balance returns:
 
-### Why integer kobo for money?
+```text
+400 Bad Request
+```
 
-Currency amounts will be stored as integer kobo values. For example, ₦5,000.00 is represented as `500000` kobo. This avoids floating-point precision errors.
+```json
+{
+  "detail": "Insufficient wallet balance"
+}
+```
 
-## Known limitations
+## Transaction Safety
 
-- This is not a licensed financial service.
-- It does not process real payments or store payment-card information.
-- Payment-provider interactions are simulated.
-- It is not production-ready without further security review, monitoring, load testing, deployment hardening, and compliance work.
+Each credit or debit operation:
+
+1. Locks the target wallet row while processing the request.
+2. Checks available balance before a debit.
+3. Updates the wallet balance.
+4. Creates the matching transaction ledger entry.
+5. Commits both changes together.
+
+If a debit is larger than the available balance, Balanza returns an error and does not create a transaction or change the balance.
 
 ## Testing
 
-Activate the virtual environment and run:
+The automated test suite runs against the separate `balanza_test` PostgreSQL database, not the normal development database.
+
+Create and migrate the test database once:
 
 ```powershell
-pytest
+docker compose exec db psql -U balanza -d postgres -c "CREATE DATABASE balanza_test;"
 ```
 
-The current test suite verifies wallet creation, successful retrieval, missing-wallet handling, and request validation.
+If the database already exists, PostgreSQL will report that it exists; this is safe to ignore.
 
-## Local PostgreSQL
+Apply migrations to the test database:
 
-Balanza uses PostgreSQL for local development through Docker Compose.
+```powershell
+$env:POSTGRES_DB = "balanza_test"
+alembic upgrade head
+Remove-Item Env:POSTGRES_DB
+```
 
-1. Copy the environment template:
+Run the tests:
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+```powershell
+pytest -v
+```
 
-2. Start PostgreSQL:
+The current suite verifies:
 
-   ```powershell
-   docker compose up -d db
-   ```
+- Wallet creation with a zero balance.
+- Wallet retrieval.
+- Successful credits.
+- Successful debits.
+- Insufficient-funds rejection without changing the balance.
+- Transaction-ledger retrieval.
+- Invalid amount rejection.
+- Invalid transaction-type rejection.
 
-3. Confirm the database is healthy:
+## Known Limitations
 
-   ```powershell
-   docker compose ps
-   ```
-
-4. Stop the database without deleting its stored data:
-
-   ```powershell
-   docker compose down
-   ```
-
-The PostgreSQL data is stored in a local Docker volume and survives normal container restarts.
-
-- GitHub: https://github.com/YOUR-GITHUB-USERNAME
-- Location: Abuja, Nigeria
+- No user accounts or authentication yet.
+- No wallet ownership or authorization checks yet.
+- No idempotency keys for safe client retries yet.
+- No external payment-provider integration.
+- No audit log beyond the wallet transaction ledger.
+- No production deployment configuration, monitoring, rate limiting, or compliance review.
+- This application is not a licensed financial service and must not be used to handle real funds.

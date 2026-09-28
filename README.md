@@ -162,6 +162,15 @@ Currency amounts will be stored as integer kobo values. For example, ₦5,000.00
 - Payment-provider interactions are simulated.
 - It is not production-ready without further security review, monitoring, load testing, deployment hardening, and compliance work.
 
+## Testing
+
+Activate the virtual environment and run:
+
+```powershell
+pytest
+```
+
+The current test suite verifies wallet creation, successful retrieval, missing-wallet handling, and request validation.
 
 - GitHub: https://github.com/YOUR-GITHUB-USERNAME
 - Location: Abuja, Nigeria

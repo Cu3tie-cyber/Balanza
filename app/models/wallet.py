@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, DateTime, String, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -10,6 +10,12 @@ from app.db.base import Base
 
 class Wallet(Base):
     __tablename__ = "wallets"
+    __table_args__ = (
+        CheckConstraint(
+            "balance_kobo >= 0",
+            name="ck_wallets_balance_kobo_nonnegative",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True),

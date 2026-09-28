@@ -172,5 +172,35 @@ pytest
 
 The current test suite verifies wallet creation, successful retrieval, missing-wallet handling, and request validation.
 
+## Local PostgreSQL
+
+Balanza uses PostgreSQL for local development through Docker Compose.
+
+1. Copy the environment template:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+2. Start PostgreSQL:
+
+   ```powershell
+   docker compose up -d db
+   ```
+
+3. Confirm the database is healthy:
+
+   ```powershell
+   docker compose ps
+   ```
+
+4. Stop the database without deleting its stored data:
+
+   ```powershell
+   docker compose down
+   ```
+
+The PostgreSQL data is stored in a local Docker volume and survives normal container restarts.
+
 - GitHub: https://github.com/YOUR-GITHUB-USERNAME
 - Location: Abuja, Nigeria

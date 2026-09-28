@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     postgres_db: str
+    postgres_test_db: str = "balanza_test"
     postgres_user: str
     postgres_password: str
     postgres_port: int = 5432
@@ -25,5 +26,12 @@ class Settings(BaseSettings):
             f"@localhost:{self.postgres_port}/{self.postgres_db}"
         )
 
+    @property
+    def test_database_url(self) -> str:
+        return (
+            "postgresql+psycopg://"
+            f"{self.postgres_user}:{self.postgres_password}"
+            f"@localhost:{self.postgres_port}/{self.postgres_test_db}"
+        ) 
 
 settings = Settings()

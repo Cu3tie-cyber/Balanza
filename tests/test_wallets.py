@@ -1,16 +1,7 @@
 from fastapi.testclient import TestClient
 
-from app.api.routes.wallets import wallets
-from app.main import app
 
-client = TestClient(app)
-
-
-def setup_function():
-    wallets.clear()
-
-
-def test_create_wallet_returns_201():
+def test_create_wallet_returns_201(client: TestClient):
     response = client.post(
         "/api/v1/wallets",
         json={
@@ -28,7 +19,7 @@ def test_create_wallet_returns_201():
     assert "id" in body
 
 
-def test_get_existing_wallet_returns_200():
+def test_get_existing_wallet_returns_200(client: TestClient):
     create_response = client.post(
         "/api/v1/wallets",
         json={
@@ -46,7 +37,7 @@ def test_get_existing_wallet_returns_200():
     assert response.json()["name"] == "Savings wallet"
 
 
-def test_get_missing_wallet_returns_404():
+def test_get_missing_wallet_returns_404(client: TestClient):
     response = client.get(
         "/api/v1/wallets/00000000-0000-0000-0000-000000000000"
     )
@@ -55,7 +46,7 @@ def test_get_missing_wallet_returns_404():
     assert response.json() == {"detail": "Wallet not found"}
 
 
-def test_invalid_wallet_input_returns_422():
+def test_invalid_wallet_input_returns_422(client: TestClient):
     response = client.post(
         "/api/v1/wallets",
         json={

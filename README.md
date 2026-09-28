@@ -16,14 +16,15 @@ Balanza is an in-progress project designed to explore those backend engineering 
 - `GET /health` health-check endpoint
 - Automatically generated interactive API documentation at `/docs`
 - Versioned API routing under `/api/v1`
-- `POST /api/v1/wallets` creates a temporary NGN wallet
-- `GET /api/v1/wallets/{wallet_id}` retrieves a temporary wallet by UUID
+- `POST /api/v1/wallets` creates a persistent NGN wallet in PostgreSQL
+- `GET /api/v1/wallets/{wallet_id}` retrieves a persistent wallet by UUID
+- Alembic database migrations manage the PostgreSQL schema
+- Automated endpoint tests run against an isolated PostgreSQL test database
 - Pydantic request validation for wallet name and supported currency
 - Consistent `404 Not Found` responses for missing wallets
 
 ## Planned capabilities
 
-- Replace temporary in-memory wallet storage with PostgreSQL persistence
 - Project configuration and environment-variable management
 - PostgreSQL database integration and schema migrations
 - User registration and login
@@ -136,6 +137,7 @@ pytest
 ```
 
 The project will include tests for successful behaviour as well as failure cases such as invalid input, unauthorized access, duplicate requests, and insufficient balance.
+The current test suite verifies wallet creation, successful retrieval, missing-wallet handling, and request validation against an isolated PostgreSQL test database.
 
 ## Architecture decisions
 
